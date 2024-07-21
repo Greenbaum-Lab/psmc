@@ -1,6 +1,6 @@
 import subprocess
 import os
-
+this is a test
 # Define the paths and file names
 sample_12491 = "/home/data1/ohad/panthera/ready_files/order/12491_no_filter.bcf"
 sample_9611 = "/home/data1/ohad/panthera/ready_files/order/9611_no_filter.bcf"
