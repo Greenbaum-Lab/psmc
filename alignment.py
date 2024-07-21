@@ -1,10 +1,13 @@
 import subprocess
 import os
+import sys
 
+ref_genome = "/home/data1/ohad/panthera/leopard_alignment/reference_snow_leopard.fasta"
+working_dir = '/home/data1/ohad/panthera/leopard_alignment'
 
-def run_command(command):
+def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,cwd=directory)
     stdout, stderr = process.communicate()
 
     # Decode and print stdout and stderr
@@ -19,16 +22,61 @@ def run_command(command):
     return stdout_decoded
 
 
-ref_genome = "/home/data1/ohad/panthera/leopard_alignment/reference_snow_leopard.fasta"
-
-
 def index_ref_genome(ref_genome):
     """Index the reference genome for alignment."""
     output_path = os.path.dirname(ref_genome)
-    align_cmd = f"bowtie2-build {ref_genome} {output_path}/ref_genome_index"
+    align_cmd = f"bowtie2-build -f {ref_genome} {output_path}/ref_genome_index --threads 30"
     run_command(align_cmd)
     print("Reference genome indexed.")
 
+#
+# # Bowtie2 alignment
+# for fq1 in *-1.fq.gz.filtered.gz; do
+#     fq2="${fq1/-1.fq.gz.filtered.gz/-2.fq.gz.filtered.gz}"  # Replace -1 with -2 in filename
+#     sample_name=$(basename "$fq1" | cut -d '_' -f 1-5)
+#     output_file="${OUTPUT_DIR}/${sample_name}_aligned.sam"
+#
+#     echo "Processing $sample_name"
+#     echo "Aligning $fq1 and $fq2 to $output_file"
+#
+#     # Run Bowtie2
+#     bowtie2 -x "$INDEX" -1 "$fq1" -2 "$fq2" -S "$output_file"
+# done
 
-index_ref_genome(ref_genome)
+
+import glob
+import os
+
+
+working_dir = '/home/data1/ohad/panthera/leopard_alignment'
+def run_bowtie2_alignment(pattern: str, ref_genome: str, index_suffix: str):
+    """Align paired-end reads using Bowtie2.
+    Args:
+        pattern: A glob pattern to match the FASTQ files. e.g. "*_1.fq.gz.filtered.gz"
+    """
+
+    # Use the `ls` command to list files matching the pattern and split the output to get a list of file paths
+    fastq_files_1_output = run_command(f'ls {pattern}')
+    fastq_files_1 = fastq_files_1_output.strip().split('\n')
+
+    # Adjust the pattern to find the second set of files and repeat the process
+    pattern2 = pattern.replace("_1", "_2")
+    fastq_files_2_output = run_command(f'ls {pattern2}')
+    fastq_files_2 = fastq_files_2_output.strip().split('\n')
+
+    # Iterate over each pair of files
+    for fq1, fq2 in zip(fastq_files_1, fastq_files_2):
+        output = os.path.join(working_dir, f"{os.path.basename(fq1).replace('_1.fq.gz.filtered.gz', '_aligned.sam')}")
+        print(output)
+        print(f"Aligning {fq1} and {fq2}")
+
+        align_cmd = f"bowtie2 -x {index_suffix} -1 {fq1} -2 {fq2} -S {output}"
+        run_command(align_cmd)
+
+
+index_suffix = "ref_genome_index"
+run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', ref_genome=ref_genome,
+                      index_suffix=index_suffix)
+
+# index_ref_genome(ref_genome)
 
