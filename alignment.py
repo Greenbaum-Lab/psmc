@@ -29,24 +29,6 @@ def index_ref_genome(ref_genome):
     run_command(align_cmd)
     print("Reference genome indexed.")
 
-#
-# # Bowtie2 alignment
-# for fq1 in *-1.fq.gz.filtered.gz; do
-#     fq2="${fq1/-1.fq.gz.filtered.gz/-2.fq.gz.filtered.gz}"  # Replace -1 with -2 in filename
-#     sample_name=$(basename "$fq1" | cut -d '_' -f 1-5)
-#     output_file="${OUTPUT_DIR}/${sample_name}_aligned.sam"
-#
-#     echo "Processing $sample_name"
-#     echo "Aligning $fq1 and $fq2 to $output_file"
-#
-#     # Run Bowtie2
-#     bowtie2 -x "$INDEX" -1 "$fq1" -2 "$fq2" -S "$output_file"
-# done
-
-
-import glob
-import os
-
 
 working_dir = '/home/data1/ohad/panthera/leopard_alignment'
 def run_bowtie2_alignment(pattern: str, ref_genome: str, index_suffix: str):
@@ -70,13 +52,14 @@ def run_bowtie2_alignment(pattern: str, ref_genome: str, index_suffix: str):
         print(output)
         print(f"Aligning {fq1} and {fq2}")
 
-        align_cmd = f"bowtie2 -x {index_suffix} -1 {fq1} -2 {fq2} -S {output}"
+        align_cmd = f"bowtie2  --threads=50 -x={index_suffix} -1={fq1} -2={fq2} -S={output}"
         run_command(align_cmd)
 
+
+# index_ref_genome(ref_genome)
 
 index_suffix = "ref_genome_index"
 run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', ref_genome=ref_genome,
                       index_suffix=index_suffix)
 
-# index_ref_genome(ref_genome)
 
