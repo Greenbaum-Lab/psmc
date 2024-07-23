@@ -56,37 +56,62 @@ def run_bowtie2_alignment(pattern: str, ref_genome: str, index_suffix: str):
         run_command(align_cmd)
 
 
-def index_sam(sam_file):
+def index_sam(sam_file, threads=50):
     """Index the BCF file."""
-    index_cmd = f"samtools index {sam_file}"
+    index_cmd = f"samtools index {sam_file} -@ {threads}"
     run_command(index_cmd)
     print(f"SAM file indexed: {sam_file}")
 
-def sam_to_bam(working_dir):
-    """Convert SAM files to BAM files. Then sort by coordinate and index the BAM files."""
 
-    sam_files = os.listdir(working_dir)
-    print(sam_files)
+def sam_to_bam(working_dir, threads):
+    """Convert SAM files to BAM files. Then sort by coordinate and index the BAM files."""
+    sam_files = run_command(f'ls *.sam')
+    sam_files = sam_files.strip().split('\n')
 
     for sam_file in sam_files:
         # Define the output BAM file name (replace .sam with .sorted.bam)
         bam_file = f"{sam_file.replace('.sam', '_sorted.bam')}"
         print(f"Converting and sorting {sam_file} to {bam_file}...")
         # Convert SAM to BAM and sort
-        convert = f"samtools view -bS {sam_file} | samtools sort -o {bam_file}"
+        convert = f"samtools view -bS {sam_file} -@ {threads}| samtools sort -o {bam_file} -@ {threads}"
         run_command(convert)
 
-        index_cmd = f"samtools index {bam_file}"
+        index_cmd = f"samtools index {bam_file} -@ {threads}"
         run_command(index_cmd)
         print(f"BAM file indexed: {bam_file}")
 
 
+def merge_bam_files(working_dir, threads,output, bam_pattern):
+    """Merge BAM files into a single file."""
+    bam_files = run_command(f'ls *{bam_pattern}')
+    bam_files = bam_files.strip().replace('\n', ' ')
+    print(bam_files)
+    # Define the output BAM file name
+    merged_bam = f"{output}.bam"
+    merge_cmd = f"samtools merge -@ {threads} {merged_bam} *{bam_files}"
+    run_command(merge_cmd)
+    print(f"BAM files merged into {merged_bam}")
 
+
+
+
+
+
+
+
+##### index reference genome
 # index_ref_genome(ref_genome)
 
-index_suffix = "ref_genome_index"
+###### align sequence to reference genome
+# index_suffix = "ref_genome_index"
 # run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', ref_genome=ref_genome,
 #                       index_suffix=index_suffix)
 
 ##### convert sam to bam
-sam_to_bam(working_dir)
+# sam_to_bam(working_dir)
+
+##### merge bam files
+# merge_bam_files(working_dir, 50, 'merged', 'aligned_sorted.bam')
+
+##### index merged bam file
+index_sam('merged.bam',threads=100)
