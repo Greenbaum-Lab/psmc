@@ -3,7 +3,7 @@ import os
 import sys
 
 ref_genome = "/home/data1/ohad/panthera/leopard_alignment/reference_snow_leopard.fasta"
-working_dir = '/home/data1/ohad/panthera/leopard_alignment'
+working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491'
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -30,29 +30,27 @@ def index_ref_genome(ref_genome):
     print("Reference genome indexed.")
 
 
-working_dir = '/home/data1/ohad/panthera/leopard_alignment'
-def run_bowtie2_alignment(pattern: str, ref_genome: str, index_suffix: str):
+def run_bowtie2_alignment(pattern: str, index_suffix: str,threads=50):
     """Align paired-end reads using Bowtie2.
     Args:
         pattern: A glob pattern to match the FASTQ files. e.g. "*_1.fq.gz.filtered.gz"
     """
 
     # Use the `ls` command to list files matching the pattern and split the output to get a list of file paths
-    fastq_files_1_output = run_command(f'ls {pattern}')
-    fastq_files_1 = fastq_files_1_output.strip().split('\n')
+    fastq_files_1 = run_command(f'ls {pattern}')
+    fastq_files_1 = fastq_files_1.strip().split('\n')
 
     # Adjust the pattern to find the second set of files and repeat the process
     pattern2 = pattern.replace("_1", "_2")
-    fastq_files_2_output = run_command(f'ls {pattern2}')
-    fastq_files_2 = fastq_files_2_output.strip().split('\n')
+    fastq_files_2 = run_command(f'ls {pattern2}')
+    fastq_files_2 = fastq_files_2.strip().split('\n')
 
     # Iterate over each pair of files
     for fq1, fq2 in zip(fastq_files_1, fastq_files_2):
         output = os.path.join(working_dir, f"{os.path.basename(fq1).replace('_1.fq.gz.filtered.gz', '_aligned.sam')}")
-        print(output)
-        print(f"Aligning {fq1} and {fq2}")
+        print(f"Aligning {fq1} and {fq2} to {output}")
 
-        align_cmd = f"bowtie2  --threads=50 -x={index_suffix} -1={fq1} -2={fq2} -S={output}"
+        align_cmd = f"bowtie2 -x {index_suffix} -1 {fq1} -2 {fq2} -S {output} --threads {threads}"
         run_command(align_cmd)
 
 
@@ -102,16 +100,15 @@ def merge_bam_files(working_dir, threads,output, bam_pattern):
 ##### index reference genome
 # index_ref_genome(ref_genome)
 
-###### align sequence to reference genome
-# index_suffix = "ref_genome_index"
-# run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', ref_genome=ref_genome,
-#                       index_suffix=index_suffix)
+##### align sequence to reference genome
+index_suffix = "ref_genome_index"
+run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', index_suffix=index_suffix,threads=50)
 
-##### convert sam to bam
-# sam_to_bam(working_dir)
+#### convert sam to bam
+sam_to_bam(working_dir)
 
-##### merge bam files
-# merge_bam_files(working_dir, 50, 'merged', 'aligned_sorted.bam')
+#### merge bam files
+merge_bam_files(working_dir, 50, 'merged', 'aligned_sorted.bam')
 
 ##### index merged bam file
 index_sam('merged.bam',threads=100)
