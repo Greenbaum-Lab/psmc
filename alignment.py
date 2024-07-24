@@ -3,7 +3,7 @@ import os
 import sys
 
 ref_genome = "/home/data1/ohad/panthera/leopard_alignment/reference_snow_leopard.fasta"
-working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491'
+working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_9611'
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -92,23 +92,52 @@ def merge_bam_files(working_dir, threads,output, bam_pattern):
 
 
 
+def filter_chromosomes(input_bam, chromosomes):
+    """Filter the input BAM file to include only the chromosomes in the list."""
+    # Create individual BAM files for each chromosome
+    output_bam = f"{input_bam.replace('.bam', '_OnlyChr.bam')}"
+    print(f"Filtering chromosomes in {input_bam} to {output_bam}...")
+    for chromosome in chromosomes:
+        temp = f"temp_{chromosome}.bam"
+        filter_cmd = f"samtools view -b {input_bam} {chromosome} -o {temp} -@ 50"
+        run_command(filter_cmd)
+        print(f"Chromosome {chromosome} was bammed.")
+    # Merge the individual BAM files into the final output BAM file
+    merge_cmd = f"samtools merge {output_bam} out.Hic_asm_*.bam -@ 50"
+    run_command(merge_cmd)
+    print("Chromosomes filtered.")
 
 
 
+def filter_chromosomes(input_bam, chromosomes):
+    """Filter the input BAM file to include only the chromosomes in the list.
+    Args:chrosmos: list of chromosomes to keep in txt format"""
+    # Create individual BAM files for each chromosome
+    output_bam = f"{input_bam.replace('.bam', '_OnlyChr.bam')}"
+    chromosomes = ' '.join(chromosomes)
+    print(f"Filtering chromosomes in {input_bam} to {output_bam}...")
+    filter_cmd = f"samtools view -b {input_bam} {chromosomes} -o {output_bam} -@ 50"
+    run_command(filter_cmd)
 
 
 ##### index reference genome
 # index_ref_genome(ref_genome)
 
 ##### align sequence to reference genome
-index_suffix = "ref_genome_index"
-run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', index_suffix=index_suffix,threads=50)
+# index_suffix = "ref_genome_index"
+# run_bowtie2_alignment(pattern='*_1.fq.gz.filtered.gz', index_suffix=index_suffix,threads=50)
 
 #### convert sam to bam
-sam_to_bam(working_dir)
-
-#### merge bam files
-merge_bam_files(working_dir, 50, 'merged', 'aligned_sorted.bam')
-
+# sam_to_bam(working_dir, threads=50)
+#
+# #### merge bam files
+# merge_bam_files(working_dir, 50, 'merged', 'aligned_sorted.bam')
+#
 ##### index merged bam file
-index_sam('merged.bam',threads=100)
+# index_sam('9611_merged_OnlyChr.bam',threads=100)
+
+#### filter chromosomes
+# chromosoms_list = working_dir + '/chromosomes.txt'
+# with open(chromosoms_list, 'r') as f:
+#     chromosomes = f.read().splitlines()
+# filter_chromosomes('9611_merged.bam', chromosomes)
