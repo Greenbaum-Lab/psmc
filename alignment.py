@@ -2,8 +2,9 @@ import subprocess
 import os
 import sys
 
-ref_genome = "/home/data1/ohad/panthera/leopard_alignment/reference_snow_leopard.fasta"
+
 working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_9611'
+ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -120,6 +121,15 @@ def filter_chromosomes(input_bam, chromosomes):
     run_command(filter_cmd)
 
 
+
+def call_variants(bam_file, ref_genome, output_bcf, threads=50):
+    """Call variants using bcftools mpileup and call."""
+    # Define the output BCF file name
+    mpileup_cmd = (f"bcftools mpileup -Ou --threads {threads} -a 'FORMAT/DP,FORMAT/AD,INFO/AD' "
+                   f"-f {ref_genome} {bam_file} | bcftools call --threads {threads} -mv -Ob -o {output_bcf}")
+    run_command(mpileup_cmd)
+    print(f"Variants called: {output_bcf}")
+
 ##### index reference genome
 # index_ref_genome(ref_genome)
 
@@ -141,3 +151,6 @@ def filter_chromosomes(input_bam, chromosomes):
 # with open(chromosoms_list, 'r') as f:
 #     chromosomes = f.read().splitlines()
 # filter_chromosomes('9611_merged.bam', chromosomes)
+
+##### call variants
+call_variants('9611_merged_OnlyChr.bam', ref_genome, 'variants_9611.bcf', threads=50)
