@@ -1,10 +1,12 @@
 import subprocess
 import os
 import sys
+import pysam
+import matplotlib.pyplot as plt
 
-
-working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_9611'
+working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491'
 ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
+bcf_path = working_dir + '/variants_9611.bcf'
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -121,7 +123,6 @@ def filter_chromosomes(input_bam, chromosomes):
     run_command(filter_cmd)
 
 
-
 def call_variants(bam_file, ref_genome, output_bcf, threads=50):
     """Call variants using bcftools mpileup and call."""
     # Define the output BCF file name
@@ -129,6 +130,28 @@ def call_variants(bam_file, ref_genome, output_bcf, threads=50):
                    f"-f {ref_genome} {bam_file} | bcftools call --threads {threads} -mv -Ob -o {output_bcf}")
     run_command(mpileup_cmd)
     print(f"Variants called: {output_bcf}")
+
+
+def plot_coverage(bcf_path, measure= 'depth' or 'qual'):
+
+    bcf = pysam.VariantFile(bcf_path)
+    data = []
+
+    if measure == 'depth':
+        # Extract coverage depth from each record
+        for record in bcf:
+            if 'DP' in record.info:
+                data.append(record.info['DP'])
+    else:
+        data.append(record.qual)
+
+    # Plotting the histogram
+    plt.figure(figsize=(10, 6))
+    plt.hist(data, bins=100)
+    # plt.xlim(0, 100)
+    plt.ylabel('Frequency')
+    plt.show()
+
 
 ##### index reference genome
 # index_ref_genome(ref_genome)
@@ -153,4 +176,7 @@ def call_variants(bam_file, ref_genome, output_bcf, threads=50):
 # filter_chromosomes('9611_merged.bam', chromosomes)
 
 ##### call variants
-call_variants('9611_merged_OnlyChr.bam', ref_genome, 'variants_9611.bcf', threads=50)
+call_variants('12491_merged_OnlyChr.bam', ref_genome, 'variants_12491.bcf', threads=80)
+
+##### plot coverage
+# plot_coverage(bcf_path, measure='depth')
