@@ -4,9 +4,13 @@ import sys
 import pysam
 import matplotlib.pyplot as plt
 
-working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491'
+working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_9611'
 ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
-bcf_path = working_dir + '/variants_9611.bcf'
+bcf_file = working_dir + '/variants_9611.bcf'
+
+# chromosoms_list = working_dir + '/chromosomes.txt'
+# with open(chromosoms_list, 'r') as f:
+#     chromosomes = f.read().splitlines()
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -132,26 +136,17 @@ def call_variants(bam_file, ref_genome, output_bcf, threads=50):
     print(f"Variants called: {output_bcf}")
 
 
-def plot_coverage(bcf_path, measure= 'depth' or 'qual'):
-
-    bcf = pysam.VariantFile(bcf_path)
-    data = []
-
-    if measure == 'depth':
-        # Extract coverage depth from each record
-        for record in bcf:
-            if 'DP' in record.info:
-                data.append(record.info['DP'])
-    else:
-        data.append(record.qual)
-
-    # Plotting the histogram
-    plt.figure(figsize=(10, 6))
-    plt.hist(data, bins=100)
-    # plt.xlim(0, 100)
-    plt.ylabel('Frequency')
-    plt.show()
-
+def filter_bcf(input_bcf, min_qual=40, min_depth=12,max_depth=90):
+    """Filter the input BCF file based on quality and depth."""
+    output_bcf_path = f"{input_bcf.replace('.bcf', f'_filtered_DP{min_depth}-{max_depth}QUAL{min_qual}.bcf')}"
+    input_bcf = pysam.VariantFile(input_bcf,threads=50)
+    output_bcf = pysam.VariantFile(output_bcf_path, 'w', header=input_bcf.header)
+    print(f"Filtering {input_bcf} to {output_bcf_path}...")
+    for record in input_bcf:
+        if record.qual >= min_qual and min_depth <= record.info['DP'] <= max_depth:
+            output_bcf.write(record)
+    output_bcf.close()
+    print(f"BCF file filtered: {output_bcf_path}")
 
 ##### index reference genome
 # index_ref_genome(ref_genome)
@@ -170,13 +165,12 @@ def plot_coverage(bcf_path, measure= 'depth' or 'qual'):
 # index_sam('9611_merged_OnlyChr.bam',threads=100)
 
 #### filter chromosomes
-# chromosoms_list = working_dir + '/chromosomes.txt'
-# with open(chromosoms_list, 'r') as f:
-#     chromosomes = f.read().splitlines()
 # filter_chromosomes('9611_merged.bam', chromosomes)
 
 ##### call variants
-call_variants('12491_merged_OnlyChr.bam', ref_genome, 'variants_12491.bcf', threads=80)
+# call_variants('12491_merged_OnlyChr.bam', ref_genome, 'variants_12491.bcf', threads=80)
 
-##### plot coverage
-# plot_coverage(bcf_path, measure='depth')
+##### filter bcf
+bcf_file = working_dir + '/variants_9611.bcf'
+
+filter_bcf(bcf_file, min_qual=40, min_depth=12,max_depth=90)
