@@ -1,11 +1,17 @@
+import subprocess
+import os
+import sys
+import pysam
+import matplotlib.pyplot as plt
+import pysamstats
 
 working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491/test_chr'
 ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
-bcf_file = working_dir + '/variants_9611.bcf'
-
+bcf_file = working_dir + '/chr_default.bcf'
 # chromosoms_list = working_dir + '/chromosomes.txt'
 # with open(chromosoms_list, 'r') as f:
 #     chromosomes = f.read().splitlines()
+
 
 def run_command(command,directory=working_dir):
     """Run a shell command, capture the output, and print it."""
@@ -98,19 +104,18 @@ def merge_bam_files(working_dir, threads,output, bam_pattern):
 def mask_low_coverage(bam_file, min_depth=12, max_depth=80):
     """Mask regions with low coverage in the BAM file."""
     # Define the output BED file name
-    output_bed = f"{bam_file.replace('.bam', '_MaskCoverage.bed')}"
+    output_bed = f"{bam_file.replace('.bam', '_MarkCoverage.bed')}"
     mask_cmd = f"bedtools genomecov -ibam {bam_file} -bga | awk '$4 < {min_depth} || $4 > {max_depth}' > {output_bed}"
     run_command(mask_cmd)
     print(f"Low coverage regions masked: {output_bed}")
 
 def create_bed_for_low_quality_reads(bam_file, working_dir, rms_threshold: 25):
     bam_file = pysam.AlignmentFile(bam_file)
-    with open(f"{working_dir}/mask_RMS.bed", 'a') as mask_rms:
+    with open(f"{working_dir}/MarkRMS.bed", 'a') as mask_rms:
         # create bed file tab delimited for low quality reads
         for record in pysamstats.stat_mapq(bam_file):
             if record['rms_mapq'] < rms_threshold:
                 mask_rms.write(f"{record['chrom']}\t{record['pos']}\t{record['pos']+1}\n")
-
 
 
 def filter_chromosomes(input_bam, chromosomes):
@@ -131,6 +136,24 @@ def call_variants(bam_file, ref_genome, output_bcf, threads=50):
                    f"-f {ref_genome} {bam_file} | bcftools call --threads {threads} -mv -Ob -o {output_bcf}")
     run_command(mpileup_cmd)
     print(f"Variants called: {output_bcf}")
+
+
+
+def mark_area_around_indel(bcf_file):
+    """Mark 10bp around each indel in the BCF file.
+    need to left align (normalize) the indels first"""
+
+    vcf = pysam.VariantFile(bcf_file, "rb")
+
+    with open(f'{working_dir}/indel_pos.bed', 'w') as indel_pos:
+        for record in vcf:
+            if record.info.get('INDEL', False):
+
+                indel_pos.write(f"{record.chrom}\t{record.pos-10}\t{record.pos-1}\n")
+                indel_pos.write(f"{record.chrom}\t{record.pos+1}\t{record.pos+10}\n")
+    vcf.close()
+
+
 
 
 def filter_bcf(input_bcf, min_qual=40, min_depth=12,max_depth=90):
@@ -286,14 +309,5 @@ def vcf2smc(working_dir, input_vcf, output_smc, samples, missing_cutoff,chr, pop
     vcf2smc_cmd = f"smc++ vcf2smc -d {samples} --missing-cutoff={missing_cutoff} {input_vcf} {output_smc} {chr} pop:{pop_samples}"
     run_command(vcf2smc_cmd)
     print(f"SMC++ format saved to {output_smc}")
-
-
-
-
-#### mask low coverage
-sample = 12491
-working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
-bam_file = working_dir + f'/{sample}_merged_OnlyChr.bam'
-mask_low_coverage(bam_file, min_depth=12, max_depth=80)
 
 

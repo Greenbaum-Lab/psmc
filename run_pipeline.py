@@ -5,6 +5,8 @@ import pysam
 import matplotlib.pyplot as plt
 import pysamstats
 
+from funcs import index_ref_genome, run_bowtie2_alignment, sam_to_bam, merge_bam_files, index_sam, filter_chromosomes, \
+    mask_low_coverage, create_bed_for_low_quality_reads, call_variants, filter_bcf, calculate_snp_stats
 
 # Define the paths and file names
 working_dir = "/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491/preprocessing"
@@ -42,8 +44,11 @@ samples = ["12491", "9611"]
 # mask_low_coverage(bam_file, min_depth=12, max_depth=80)
 
 #### mark low quality reads
-# bam_file  = working_dir + '/chr1.bam'
-# create_bed_for_low_quality_reads(bam_file, working_dir)
+for sample in samples:
+    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+    bam_file = working_dir + f'/{sample}_merged_OnlyChr.bam'
+    create_bed_for_low_quality_reads(bam_file, working_dir,rms_threshold=25)
+
 
 ##### call variants
 # call_variants('12491_merged_OnlyChr.bam', ref_genome, 'variants_12491.bcf', threads=80)
@@ -85,15 +90,20 @@ samples = ["12491", "9611"]
 # index_bcf(sample_12491)
 
 
-###############PSMC preprocessing and analysis
+############### PSMC preprocessing and analysis
+############### change directory to the psmc directory
+
 # mask_file = working_dir + "/mask_regions.bed"
 # for sample in samples:
 #     input_bcf = working_dir + f"/variants_{sample}_filtered_DP12-90QUAL40.bcf"
 #     make_consensus(input_bcf, ref, mask_file)
 #     print(f"Finished processing {sample}.\n")
 
-how soft masking changes the results?
-how het looks in the fasta?
+# how soft masking changes the results?
+# how het looks in the fasta?
+
+
+
 #################### zip files
 # for sample in samples:
 #     input = f"/home/data1/panthera/ready_files/order/{sample}_filtered_autosom_consensus.fa"
