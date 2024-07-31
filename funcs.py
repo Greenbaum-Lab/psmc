@@ -104,14 +104,14 @@ def merge_bam_files(working_dir, threads,output, bam_pattern):
 def mask_low_coverage(bam_file, min_depth=12, max_depth=80):
     """Mask regions with low coverage in the BAM file."""
     # Define the output BED file name
-    output_bed = f"{bam_file.replace('.bam', '_MarkCoverage.bed')}"
+    output_bed = "mark_low_coverage.bed"
     mask_cmd = f"bedtools genomecov -ibam {bam_file} -bga | awk '$4 < {min_depth} || $4 > {max_depth}' > {output_bed}"
     run_command(mask_cmd)
     print(f"Low coverage regions masked: {output_bed}")
 
 def create_bed_for_low_quality_reads(bam_file, working_dir, rms_threshold: 25):
     bam_file = pysam.AlignmentFile(bam_file)
-    with open(f"{working_dir}/MarkRMS.bed", 'a') as mask_rms:
+    with open(f"{working_dir}/mark_RMS.bed", 'a') as mask_rms:
         # create bed file tab delimited for low quality reads
         for record in pysamstats.stat_mapq(bam_file):
             if record['rms_mapq'] < rms_threshold:
@@ -139,13 +139,13 @@ def call_variants(bam_file, ref_genome, output_bcf, threads=50):
 
 
 
-def mark_area_around_indel(bcf_file):
+def mark_area_around_indel(bcf_file, working_dir, output_file):
     """Mark 10bp around each indel in the BCF file.
     need to left align (normalize) the indels first"""
 
     vcf = pysam.VariantFile(bcf_file, "rb")
 
-    with open(f'{working_dir}/indel_pos.bed', 'w') as indel_pos:
+    with open(f'{working_dir}/{output_file}', 'w') as indel_pos:
         for record in vcf:
             if record.info.get('INDEL', False):
 

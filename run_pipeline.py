@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import pysamstats
 
 from funcs import index_ref_genome, run_bowtie2_alignment, sam_to_bam, merge_bam_files, index_sam, filter_chromosomes, \
-    mask_low_coverage, create_bed_for_low_quality_reads, call_variants, filter_bcf, calculate_snp_stats
+    mask_low_coverage, create_bed_for_low_quality_reads, call_variants, filter_bcf, calculate_snp_stats, mark_area_around_indel,\
+    make_consensus, zip_files, convert_fasta_to_psmcfa, run_psmc, plot_psmc, vcf2smc, sort_bam, add_read_groups, mark_duplicates, merge_bcf, change_sample_names
 
 # Define the paths and file names
 working_dir = "/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491/preprocessing"
@@ -44,10 +45,10 @@ samples = ["12491", "9611"]
 # mask_low_coverage(bam_file, min_depth=12, max_depth=80)
 
 #### mark low quality reads
-for sample in samples:
-    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
-    bam_file = working_dir + f'/{sample}_merged_OnlyChr.bam'
-    create_bed_for_low_quality_reads(bam_file, working_dir,rms_threshold=25)
+# for sample in samples:
+#     working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+#     bam_file = working_dir + f'/{sample}_merged_OnlyChr.bam'
+#     create_bed_for_low_quality_reads(bam_file, working_dir,rms_threshold=25)
 
 
 ##### call variants
@@ -56,6 +57,14 @@ for sample in samples:
 ##### filter bcf
 # bcf_file = working_dir + '/variants_12491.bcf'
 # filter_bcf(bcf_file, min_qual=40, min_depth=12,max_depth=90)
+
+#### mark areas around indels
+for sample in samples:
+    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+    bcf_file = working_dir + f'/variants_{sample}.bcf'
+    output_file = 'mark_indels_area.bed'
+    mark_area_around_indel(bcf_file,working_dir, output_file)
+
 
 
 
