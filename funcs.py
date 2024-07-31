@@ -230,7 +230,7 @@ def zip_files(input):
 def convert_fasta_to_psmcfa(input_fa):
     """Convert FASTA to PSMC format."""
     output_psmcfa = input_fa.replace(".fa", ".psmcfa")
-    convert_cmd = f"/home/data1/panthera/alignment/psmc/utils/fq2psmcfa {input_fa} > {output_psmcfa}"
+    convert_cmd = f"/home/data1/ohad/panthera/alignment/psmc/utils/fq2psmcfa {input_fa} > {output_psmcfa}"
     run_command(convert_cmd)
     print(f"PSMC format saved to {output_psmcfa}")
 

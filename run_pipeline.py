@@ -100,29 +100,26 @@ samples = ["12491", "9611"]
 ############### PSMC preprocessing and analysis
 ############### change directory to the psmc directory
 
-for sample in samples:
-    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
-    mask_file = working_dir + "/mask_regions.bed"
-    input_bcf = working_dir + f"/variants_{sample}_filtered_DP12-90QUAL40.bcf"
-    make_consensus(input_bcf, ref, mask_file)
-    print(f"Finished processing {sample}.\n")
-
-# how soft masking changes the results?
-# how het looks in the fasta?
-
-
+# for sample in samples:
+#     working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+#     mask_file = working_dir + "/mask_regions.bed"
+#     input_bcf = working_dir + f"/variants_{sample}_filtered_DP12-90QUAL40.bcf"
+#     make_consensus(input_bcf, ref, mask_file)
+#     print(f"Finished processing {sample}.\n")
 
 #################### zip files
 # for sample in samples:
-#     input = f"/home/data1/panthera/ready_files/order/{sample}_filtered_autosom_consensus.fa"
-#     zip_files(input)
-#     print(f"Finished zipping {sample}.\n")
+#         working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+#         input_file = working_dir + f"/{sample}_consensus.fa"
+#         zip_files(input_file)
+#         print(f"Finished zipping {sample}.\n")
 
 ########## convert fasta to psmcfa as the required format for psmc
-# for sample in samples:
-#     input_fa = f"/home/data1/panthera/ready_files/order/{sample}_filtered_autosom_consensus.fa.gz"
-#     convert_fasta_to_psmcfa(input_fa)
-#     print(f"Finished converting {sample}.\n")
+for sample in samples:
+    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing'
+    input_file = working_dir + f"/{sample}_consensus.fa.gz"
+    convert_fasta_to_psmcfa(input_file)
+    print(f"Finished converting {sample}.\n")
 
 ######### run psmc
 # for sample in samples:
