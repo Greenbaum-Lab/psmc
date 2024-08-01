@@ -154,68 +154,94 @@ samples = ["12491", "9611"]
 
 ####test  parallele
 
-import os
-import sys
-import subprocess
-from multiprocessing import Pool
-
-def run_command(command,directory):
-    """Run a shell command, capture the output, and print it."""
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,cwd=directory)
-    stdout, stderr = process.communicate()
-
-    # Decode and print stdout and stderr
-    stdout_decoded = stdout.decode()
-    stderr_decoded = stderr.decode()
-    print(stdout_decoded)
-    if stderr_decoded:
-        print(stderr_decoded, file=sys.stderr)
-
-    if process.returncode != 0:
-        raise Exception(f"Error running command: {command}\n{stderr_decoded}")
-    return stdout_decoded
-
-
-def run_psmc(directory, input_psmcfa, p, t, r, N=25):
-    base_name = os.path.basename(input_psmcfa)
-    output_psmc = base_name.replace('.psmcfa', f'_p{p}_t{t}_r{r}.psmc')
-    psmc_cmd = f"/home/data1/ohad/panthera/alignment/psmc/psmc -N{N} -t{t} -r{r} -p '{p}' -o {output_psmc} {input_psmcfa}"
-    run_command(psmc_cmd, directory)
-    print(f"PSMC output saved to {output_psmc}")
-
-
-def run_psmc_for_sample(sample, t, r, p):
-    working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing/psmc_res'
-    input_psmcfa = os.path.join(working_dir, f"{sample}_consensus.psmcfa")
-    run_psmc(working_dir, input_psmcfa, p, t, r)
-    print(f"Finished running PSMC for {sample} with t={t}, r={r}, p='{p}'.\n")
-
-from itertools import product
-
-# Define parameters
-t_values = range(5, 16)  # t from 10 to 15
-r_values = range(1, 6)    # r from 1 to 5
-p_values = ['1+1+1+1+25*2+4+6', '2+2+25*2+4+6', '4+25*2+4+6']
+# import os
+# import sys
+# import subprocess
+# from multiprocessing import Pool
+#
+# def run_command(command,directory):
+#     """Run a shell command, capture the output, and print it."""
+#     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,cwd=directory)
+#     stdout, stderr = process.communicate()
+#
+#     # Decode and print stdout and stderr
+#     stdout_decoded = stdout.decode()
+#     stderr_decoded = stderr.decode()
+#     print(stdout_decoded)
+#     if stderr_decoded:
+#         print(stderr_decoded, file=sys.stderr)
+#
+#     if process.returncode != 0:
+#         raise Exception(f"Error running command: {command}\n{stderr_decoded}")
+#     return stdout_decoded
+#
+#
+# def run_psmc(directory, input_psmcfa, p, t, r, N=25):
+#     base_name = os.path.basename(input_psmcfa)
+#     output_psmc = base_name.replace('.psmcfa', f'_p{p}_t{t}_r{r}.psmc')
+#     psmc_cmd = f"/home/data1/ohad/panthera/alignment/psmc/psmc -N{N} -t{t} -r{r} -p '{p}' -o {output_psmc} {input_psmcfa}"
+#     run_command(psmc_cmd, directory)
+#     print(f"PSMC output saved to {output_psmc}")
+#
+#
+# def run_psmc_for_sample(sample, t, r, p):
+#     working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing/psmc_res'
+#     input_psmcfa = os.path.join(working_dir, f"{sample}_consensus.psmcfa")
+#     run_psmc(working_dir, input_psmcfa, p, t, r)
+#     print(f"Finished running PSMC for {sample} with t={t}, r={r}, p='{p}'.\n")
+#
+# from itertools import product
+#
+# # Define parameters
+# t_values = range(5, 16)  # t from 10 to 15
+# r_values = range(2, 6)    # r from 1 to 5
+# p_values = ['2+2+25*2+4+6']
 
 # Create a grid of all parameter combinations
-parameter_combinations = list(product(samples, t_values, r_values, p_values))
+# parameter_combinations = list(product(samples, t_values, r_values, p_values))
 
 # Function to map parameter combinations
-def run_combination(params):
-    sample, t, r, p = params
-    run_psmc_for_sample(sample, t, r, p)
+# def run_combination(params):
+#     sample, t, r, p = params
+#     run_psmc_for_sample(sample, t, r, p)
 
 # Use multiprocessing to run simulations in parallel
-if __name__ == "__main__":
-    with Pool(processes=100) as pool:  # Adjust number of processes based on your CPU
-        pool.map(run_combination, parameter_combinations)
+# if __name__ == "__main__":
+#     with Pool(processes=70) as pool:  # Adjust number of processes based on your CPU
+#         pool.map(run_combination, parameter_combinations)
 
 
-
-
-
-
-
+# def plot_psmc(input_psmc,working_dir, g=7.5,u=1.1e-9):
+#     """Plot the PSMC results."""
+#     output_plot = input_psmc.replace('.psmc', '_plot')
+#     plot_cmd = f"/home/data1/ohad/panthera/alignment/psmc/utils/psmc_plot.pl " \
+#                f"-R -u {u} -g {g} {output_plot} {input_psmc}"
+#     run_command(plot_cmd,working_dir)
+#     print("PSMC plot generated.")
+#
+# def plot_psmc_for_sample(sample, t, r, p):
+#     working_dir = f'/home/data1/ohad/panthera/snow_leopard_alignment/sample_{sample}/preprocessing/psmc_res'
+#     print(working_dir)
+#     input_psmc = os.path.join(working_dir, f"{sample}_consensus_p{p}_t{t}_r{r}.psmc")
+#     print(input_psmc)
+#     plot_psmc(working_dir=working_dir, input_psmc=input_psmc, g=7.5,u=1.1e-9)
+#     print(f"Finished running PSMC for {sample} with t={t}, r={r}, p='{p}'.\n")
+#
+#
+# def run_combination(params):
+#     sample, t, r, p = params
+#     plot_psmc_for_sample(sample, t, r, p)
+#
+# # Use multiprocessing to run simulations in parallel
+# if __name__ == "__main__":
+#     with Pool(processes=40) as pool:  # Adjust number of processes based on your CPU
+#         pool.map(run_combination, parameter_combinations)
+#
+#
+#
+#
+#
+#
 
 
 
