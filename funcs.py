@@ -5,15 +5,15 @@ import pysam
 import matplotlib.pyplot as plt
 import pysamstats
 
-working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491/test_chr'
-ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
-bcf_file = working_dir + '/chr_default.bcf'
+# working_dir = '/home/data1/ohad/panthera/snow_leopard_alignment/sample_12491/preprocessing/psmc_res'
+# ref_genome = f"{working_dir}/reference_snow_leopard.fasta"
+# bcf_file = working_dir + '/chr_default.bcf'
 # chromosoms_list = working_dir + '/chromosomes.txt'
 # with open(chromosoms_list, 'r') as f:
 #     chromosomes = f.read().splitlines()
 
 
-def run_command(command,directory=working_dir):
+def run_command(command,directory):
     """Run a shell command, capture the output, and print it."""
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,cwd=directory)
     stdout, stderr = process.communicate()
@@ -212,49 +212,49 @@ def index_bcf(bcf_file):
     print(f"BCF file indexed: {bcf_file}")
 
 
-def make_consensus(input_bcf, ref, mask_file):
+def make_consensus(input_bcf, ref, mask_file,working_dir):
     """Create a consensus FASTA sequence from a BCF file.
     I=IUPAC code for all genotypes"""
     output_fasta = input_bcf.replace(".bcf", "_consensus.fa")
     consensus_cmd = f"bcftools consensus -m {mask_file} -f {ref} -I {input_bcf} -o {output_fasta}"
-    run_command(consensus_cmd)
+    run_command(consensus_cmd, working_dir)
     print(f"Consensus FASTA sequence saved to {output_fasta}")
 
-def zip_files(input):
+def zip_files(input, working_dir):
     """Zip files"""
     zip_cmd = f"gzip {input}"
-    run_command(zip_cmd)
+    run_command(zip_cmd, working_dir)
     print(f"Files zipped")
 
 
-def convert_fasta_to_psmcfa(input_fa):
+def convert_fasta_to_psmcfa(input_fa, working_dir):
     """Convert FASTA to PSMC format."""
     output_psmcfa = input_fa.replace(".fa", ".psmcfa")
     convert_cmd = f"/home/data1/ohad/panthera/alignment/psmc/utils/fq2psmcfa {input_fa} > {output_psmcfa}"
-    run_command(convert_cmd)
+    run_command(convert_cmd, working_dir)
     print(f"PSMC format saved to {output_psmcfa}")
 
 
 # =4+25*2+4+6
-def run_psmc(input_psmcfa, p, t=15, r=5, N=25):
+def run_psmc(input_psmcfa, working_dir, p, t=15, r=5, N=25):
     """Run PSMC. output should have 10 recombinatio nevents per time interval"""
     # Get the base name of the input file
     base_name = os.path.basename(input_psmcfa)
     # Replace the '.psmcfa' extension with '.psmc' in the base name
-    output_base_name = base_name.replace('.psmcfa', '_10-1.psmc')
+    output_psmc = base_name.replace('.psmcfa', f'_p{p}_t{t}_r{r}.psmc')
     # Join the current directory with the 'psmc' directory and the output base name to get the output file path
-    output_psmc = os.path.join(os.getcwd(), 'psmc', output_base_name)
+    # output_psmc = os.path.join(os.getcwd(), 'psmc', output_base_name,p_, p)
     psmc_cmd = f"/home/data1/ohad/panthera/alignment/psmc/psmc -N{N} -t{t} -r{r} -p '{p}' -o {output_psmc} {input_psmcfa}"
-    run_command(psmc_cmd)
+    run_command(psmc_cmd, working_dir)
     print(f"PSMC output saved to {output_psmc}")
 
 
-def plot_psmc(input_psmc,g=5,u=1.1e-9):
+def plot_psmc(input_psmc,working_dir, g=7.5,u=1.1e-9):
     """Plot the PSMC results."""
     output_plot = input_psmc.replace('.psmc', '_plot')
     plot_cmd = f"/home/data1/ohad/panthera/alignment/psmc/utils/psmc_plot.pl " \
-               f"-u {u} -g {g} {output_plot} {input_psmc}"
-    run_command(plot_cmd)
+               f"-R -u {u} -g {g} {output_plot} {input_psmc}"
+    run_command(plot_cmd,working_dir)
     print("PSMC plot generated.")
 
 def sort_bam(input_bam):
